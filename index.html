@@ -229,8 +229,7 @@ departureTime.setHours(13, 0, 0, 0);
 const departureTime = new Date();
 
 departureTime.setDate(departureTime.getDate() + 1);
-departureTime.setHours(13, 0, 0, 0);
-);
+departureTime.setHours(13, 0, 0, 0); // 13 = 1 PM
 
 const canvas = document.getElementById("oddsChart");
 const ctx = canvas.getContext("2d");
