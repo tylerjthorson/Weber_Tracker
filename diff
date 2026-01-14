@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Weber Showing Up for Trip | Live Odds</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root {
+    --dk-green:#00a862;
+    --dk-dark:#0b0e11;
+    --dk-card:#14181f;
+    --dk-border:#242a33;
+    --dk-text:#e5e7eb;
+    --dk-muted:#9aa4af;
+    --dk-danger:#e11d48;
+    --dk-purple:#7c3aed;
+}
+
+body {
+    margin:0;
+    font-family:Inter,system-ui,sans-serif;
+    background:var(--dk-dark);
+    color:var(--dk-text);
+}
+
+.container {
+    max-width:1100px;
+    margin:auto;
+    padding:24px;
+}
+
+header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+}
+
+header h1 {
+    font-size:22px;
+    margin:0;
+}
+
+header span {
+    color:var(--dk-green);
+    font-weight:700;
+}
+
+.card {
+    background:var(--dk-card);
+    border-radius:10px;
+    padding:18px;
+    border:1px solid var(--dk-border);
+    margin-bottom:18px;
+}
+
+.grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:16px;
+}
+
+.stat-label {
+    font-size:12px;
+    color:var(--dk-muted);
+}
+
+.stat-value {
+    font-size:28px;
+    font-weight:800;
+}
+
+.odds {
+    color:var(--dk-green);
+}
+
+.confidence-bar {
+    height:14px;
+    background:#1f2937;
+    border-radius:999px;
+    overflow:hidden;
+    margin-top:10px;
+}
+
+.confidence-fill {
+    height:100%;
+    width:45%;
+    background:linear-gradient(90deg,#ef4444,#facc15,var(--dk-green));
+    transition:width .4s;
+}
+
+.button-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:12px;
+}
+
+button {
+    background:#1f2937;
+    border:1px solid var(--dk-border);
+    color:var(--dk-text);
+    padding:14px;
+    border-radius:8px;
+    font-weight:600;
+    cursor:pointer;
+}
+
+button:hover {
+    background:#2b313c;
+}
+
+.positive { border-left:4px solid var(--dk-green); }
+.negative { border-left:4px solid var(--dk-danger); }
+.neutral  { border-left:4px solid var(--dk-purple); }
+
+ul {
+    list-style:none;
+    padding:0;
+    margin:0;
+    max-height:200px;
+    overflow-y:auto;
+}
+
+li {
+    font-size:13px;
+    padding:8px 0;
+    border-bottom:1px solid var(--dk-border);
+    color:var(--dk-muted);
+}
+
+canvas {
+    width:100%;
+    height:220px;
+}
+
+footer {
+    text-align:center;
+    font-size:11px;
+    color:var(--dk-muted);
+    margin-top:20px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<header>
+    <h1>Weber Showing Up for Trip</h1>
+    <span>LIVE</span>
+</header>
+
+<div class="card grid">
+    <div>
+        <div class="stat-label">Current Odds</div>
+        <div class="stat-value odds" id="odds">+120</div>
+    </div>
+    <div>
+        <div class="stat-label">Implied Probability</div>
+        <div class="stat-value" id="probability">45%</div>
+    </div>
+    <div>
+        <div class="stat-label">Time Until Departure</div>
+        <div class="stat-value" id="countdown">--:--:--</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="stat-label">Confidence Meter</div>
+    <div class="confidence-bar">
+        <div class="confidence-fill" id="confidenceBar"></div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="stat-label">Odds Movement</div>
+    <canvas id="oddsChart" width="1000" height="220"></canvas>
+</div>
+
+<div class="card button-grid">
+    <button class="positive" onclick="applySignal(10,'Confirmed commitment text')">📱 “I’m In”</button>
+    <button class="positive" onclick="applySignal(20,'Flight booked')">✈️ Flight Booked</button>
+    <button class="neutral" onclick="applySignal(-10,'Non-committal response')">🤷 “We’ll See”</button>
+    <button class="negative" onclick="applySignal(-20,'Silence detected')">😶 Silence</button>
+</div>
+
+<div class="card">
+    <div class="stat-label">Live Signal Feed</div>
+    <ul id="log"></ul>
+</div>
+
+<footer>
+    Fictional odds • Entertainment only • No wagering
+</footer>
+
+</div>
+
+<script>
+let probability = 45;
+const history = [probability];
+const maxPoints = 30;
+
+const departureTime = new Date();
+departureTime.setHours(departureTime.getHours() + 72);
+
+const canvas = document.getElementById("oddsChart");
+const ctx = canvas.getContext("2d");
+
+function probabilityToOdds(p) {
+    const odds = (100 / p * 100) - 100;
+    return odds >= 0 ? "+" + odds.toFixed(0) : odds.toFixed(0);
+}
+
+function updateDisplay() {
+    document.getElementById("probability").innerText = probability + "%";
+    document.getElementById("confidenceBar").style.width = probability + "%";
+    document.getElementById("odds").innerText = probabilityToOdds(probability);
+    drawChart();
+}
+
+function applySignal(change, text) {
+    probability = Math.max(1, Math.min(99, probability + change));
+    history.push(probability);
+    if (history.length > maxPoints) history.shift();
+    logEvent(text, change);
+    updateDisplay();
+}
+
+function logEvent(text, change) {
+    const li = document.createElement("li");
+    const sign = change > 0 ? "+" : "";
+    li.textContent = `[${new Date().toLocaleTimeString()}] ${text} (${sign}${change}%)`;
+    document.getElementById("log").prepend(li);
+}
+
+function drawChart() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    ctx.strokeStyle = "#1f2937";
+    ctx.lineWidth = 1;
+    for (let i=0;i<=4;i++) {
+        const y = (canvas.height/4)*i;
+        ctx.beginPath();
+        ctx.moveTo(0,y);
+        ctx.lineTo(canvas.width,y);
+        ctx.stroke();
+    }
+
+    ctx.strokeStyle = "#00a862";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+
+    history.forEach((p,i) => {
+        const x = (canvas.width/(maxPoints-1))*i;
+        const y = canvas.height - (p/100)*canvas.height;
+        if (i === 0) ctx.moveTo(x,y);
+        else ctx.lineTo(x,y);
+    });
+
+    ctx.stroke();
+}
+
+function updateCountdown() {
+    const diff = departureTime - new Date();
+    if (diff <= 0) {
+        document.getElementById("countdown").innerText = "DEPARTED";
+        return;
+    }
+
+    const h = Math.floor(diff/1000/60/60);
+    const m = Math.floor(diff/1000/60)%60;
+    const s = Math.floor(diff/1000)%60;
+
+    document.getElementById("countdown").innerText =
+        `${h}:${m.toString().padStart(2,"0")}:${s.toString().padStart(2,"0")}`;
+
+    if (h < 24 && Math.random() < 0.03) {
+        probability = Math.max(1, probability - 1);
+        history.push(probability);
+        if (history.length > maxPoints) history.shift();
+        updateDisplay();
+    }
+}
+
+setInterval(updateCountdown,1000);
+updateDisplay();
+</script>
+
+</body>
+</html>
+
