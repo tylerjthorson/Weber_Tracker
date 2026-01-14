@@ -223,10 +223,10 @@ const departureTime = new Date();
 departureTime.setDate(departureTime.getDate() + 1);
 departureTime.setHours(13, 0, 0, 0);
 
-// Force CST (UTC-6)
-departureTime.setTime(
-  departureTime.getTime() -
-  (departureTime.getTimezoneOffset() + 360) * 60000
+const departureTime = new Date();
+
+departureTime.setDate(departureTime.getDate() + 1);
+departureTime.setHours(13, 0, 0, 0);
 );
 
 const canvas = document.getElementById("oddsChart");
