@@ -183,6 +183,23 @@ footer {
     <button class="positive" onclick="applySignal(20,'Flight booked')">✈️ Flight Booked</button>
     <button class="neutral" onclick="applySignal(-10,'Non-committal response')">🤷 “We’ll See”</button>
     <button class="negative" onclick="applySignal(-20,'Silence detected')">😶 Silence</button>
+    <button class="positive" onclick="applySignal(15,'Arrived at airport')">
+  🛫 Arrived at Airport
+</button>
+
+<button class="negative" onclick="applySignal(-25,'Missed flight')">
+  ❌ Missed Flight
+</button>
+
+<button class="negative" onclick="applySignal(-20,'Slept in')">
+  😴 Slept In
+</button>
+
+<button class="negative" onclick="applySignal(-30,'AWOL')">
+  🚨 AWOL
+</button>
+
+    
 </div>
 
 <div class="card">
@@ -202,7 +219,15 @@ const history = [probability];
 const maxPoints = 30;
 
 const departureTime = new Date();
-departureTime.setHours(departureTime.getHours() + 72);
+
+departureTime.setDate(departureTime.getDate() + 1);
+departureTime.setHours(13, 0, 0, 0);
+
+// Force CST (UTC-6)
+departureTime.setTime(
+  departureTime.getTime() -
+  (departureTime.getTimezoneOffset() + 360) * 60000
+);
 
 const canvas = document.getElementById("oddsChart");
 const ctx = canvas.getContext("2d");
